@@ -26,6 +26,22 @@ function saveViews(views: Record<string, number>) {
   }
 }
 
+function getFirebaseConfig() {
+  try {
+    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    }
+  } catch (e) {
+    console.error("Failed to read firebase config:", e);
+  }
+  return {
+    projectId: "gen-lang-client-0326874047",
+    firestoreDatabaseId: "ai-studio-7454d459-7700-4242-be51-7816ea62cad7",
+    apiKey: "AIzaSyDneiaJczNqU2Od6c0lMe3AdSQKar5yGA4"
+  };
+}
+
 // 25-char logic slugify to match src/lib/utils.ts perfectly
 function slugify(title: string): string {
   if (!title) return "";
@@ -198,13 +214,17 @@ function extractChannelId(req: express.Request): string {
 }
 
 async function fetchFirestorePosts(): Promise<any[]> {
-  const projectId = "gen-lang-client-0326874047";
-  const databaseId = "ai-studio-9ae01718-7459-4ac4-90d0-d2a27c2a0cc1";
+  const config = getFirebaseConfig();
+  const projectId = config.projectId || "gen-lang-client-0326874047";
+  const databaseId = config.firestoreDatabaseId || "ai-studio-7454d459-7700-4242-be51-7816ea62cad7";
   const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/posts`;
   
   try {
     const res = await fetch(url);
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn(`fetchFirestorePosts got non-ok status: ${res.status}`);
+      return [];
+    }
     const data = await res.json();
     if (!data || !data.documents) return [];
     
@@ -714,8 +734,11 @@ ${xmlItems}
       console.log(`Saved post locally to posts-local.json: ${postId}`);
  
       // 8. ALSO write to Firestore asynchronously so the database syncs if the rules permit
-      const apiKey = "AIzaSyDneiaJczNqU2Od6c0lMe3AdSQKar5yGA4";
-      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/gen-lang-client-0326874047/databases/ai-studio-9ae01718-7459-4ac4-90d0-d2a27c2a0cc1/documents/posts/${postId}?key=${apiKey}`;
+      const config = getFirebaseConfig();
+      const apiKey = config.apiKey || "AIzaSyDneiaJczNqU2Od6c0lMe3AdSQKar5yGA4";
+      const projectId = config.projectId || "gen-lang-client-0326874047";
+      const databaseId = config.firestoreDatabaseId || "ai-studio-7454d459-7700-4242-be51-7816ea62cad7";
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/posts/${postId}?key=${apiKey}`;
       const firestoreBody = {
         fields: {
           title: { stringValue: newPost.title },
