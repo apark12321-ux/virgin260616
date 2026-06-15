@@ -1,10 +1,10 @@
 {
-  "projectId": "remixed-project-id",
-  "appId": "remixed-app-id",
-  "apiKey": "remixed-api-key",
-  "authDomain": "remixed-auth-domain",
-  "firestoreDatabaseId": "remixed-firestore-database-id",
-  "storageBucket": "remixed-storage-bucket",
-  "messagingSenderId": "remixed-messaging-sender-id",
-  "measurementId": "remixed-measurement-id"
+  "projectId": "gen-lang-client-0326874047",
+  "appId": "1:483685522204:web:e327822650fde51c0938d9",
+  "apiKey": "AIzaSyDneiaJczNqU2Od6c0lMe3AdSQKar5yGA4",
+  "authDomain": "gen-lang-client-0326874047.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-7454d459-7700-4242-be51-7816ea62cad7",
+  "storageBucket": "gen-lang-client-0326874047.firebasestorage.app",
+  "messagingSenderId": "483685522204",
+  "measurementId": ""
 }
