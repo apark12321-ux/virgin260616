@@ -467,6 +467,9 @@ async function startServer() {
   // GET /api/posts: Serving merged dynamic posts (Local file + Firestore database posts with channelId tracking)
   app.get("/api/posts", async (req, res) => {
     try {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       const posts = await fetchMergedPosts();
       const reqChannelId = extractChannelId(req);
       const hostUrl = getRequestBaseUrl(req);
@@ -503,6 +506,9 @@ async function startServer() {
   // RSS Feed XML generator: Supporting Toss Feed Studio and other RSS blog syndication integrations
   const handleRssFeed = async (req: express.Request, res: express.Response) => {
     try {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       const posts = await fetchMergedPosts();
       const hostUrl = getRequestBaseUrl(req);
       const channelId = extractChannelId(req);

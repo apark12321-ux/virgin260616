@@ -211,8 +211,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // 1. Fetch from our backend REST API which merges local & cloud posts
-    fetch("/api/posts")
+    // 1. Fetch from our backend REST API which merges local & cloud posts with cache-busting
+    fetch("/api/posts?_t=" + Date.now(), { cache: "no-store" })
       .then(res => {
         if (!res.ok) throw new Error("API response error");
         return res.json();
@@ -227,10 +227,21 @@ export default function App() {
     // 2. Fallback live subscription to Firestore posts if connection is active
     const q = query(collection(db, "posts"), orderBy("date", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const posts = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      })) as Post[];
+      const posts = snapshot.docs.map(doc => {
+        const raw = doc.data() || {};
+        return {
+          id: doc.id,
+          title: raw.title || "",
+          excerpt: raw.excerpt || "",
+          content: raw.content || "",
+          category: raw.category || "결혼준비",
+          author: raw.author || "버진로드 에디터",
+          date: raw.date || "2026-04-01",
+          image: raw.image || "https://images.unsplash.com/photo-1554224128-3c7f3edcc69f?auto=format&fit=crop&q=80&w=800",
+          readTime: raw.readTime || "3분",
+          hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : []
+        };
+      }) as Post[];
       setRealPosts(prev => {
         const merged = [...prev];
         posts.forEach(p => {
@@ -257,8 +268,8 @@ export default function App() {
       // 만약 ID가 같거나 제목이 완전히 일치하거나 slug가 같은 글이 이미 존재한다면, 고품질 보증된 로컬 MOCK_POSTS를 최우선 채용하고 해당 DB 글은 배제합니다.
       const isDuplicate = combined.some(p => 
         p.id === real.id || 
-        p.title.trim() === real.title?.trim() || 
-        slugify(p.title) === slugify(real.title || "")
+        (p.title || "").trim() === (real.title || "").trim() || 
+        slugify(p.title || "") === slugify(real.title || "")
       );
       if (!isDuplicate) {
         combined.push(real as Post);
@@ -267,12 +278,18 @@ export default function App() {
     // Dynamically sanitize any fallback branding to 버진로드 (Virginroad)
     const sanitized = combined.map(p => {
       const author = p.author === "홈코노미뉴스 편집부" ? "버진로드 편집부" : p.author;
-      const title = p.title.replace(/홈코노미뉴스/g, "버진로드");
-      const excerpt = p.excerpt.replace(/홈코노미뉴스/g, "버진로드");
-      const content = p.content.replace(/홈코노미뉴스/g, "버진로드");
+      const title = (p.title || "").replace(/홈코노미뉴스/g, "버진로드");
+      const excerpt = (p.excerpt || "").replace(/홈코노미뉴스/g, "버진로드");
+      const content = (p.content || "").replace(/홈코노미뉴스/g, "버진로드");
       return { ...p, author, title, excerpt, content };
     });
-    return sanitized.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sanitized.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      const timeValA = Number.isNaN(dateA) ? 0 : dateA;
+      const timeValB = Number.isNaN(dateB) ? 0 : dateB;
+      return timeValB - timeValA;
+    });
   }, [realPosts]);
 
   // 전체 조회수 로드 (글 목록이 준비되면)
